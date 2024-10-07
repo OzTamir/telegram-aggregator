@@ -1,12 +1,13 @@
 import os
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def create_summary(messages):
@@ -14,19 +15,17 @@ def create_summary(messages):
     system_prompt = get_system_prompt()
     user_prompt = f"Summarize the following Telegram messages:\n\n{messages_text}"
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        max_tokens=2048,
-        n=1,
-        stop=None,
-        temperature=0.7,
-    )
+    response = client.chat.completions.create(model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ],
+    max_tokens=2048,
+    n=1,
+    stop=None,
+    temperature=0.7)
 
-    return response.choices[0].message["content"].strip()
+    return response.choices[0].message.content.strip()
 
 
 def format_messages(messages):

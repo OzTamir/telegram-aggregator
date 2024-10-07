@@ -7,14 +7,8 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install uv
-RUN pip install uv
-
 # Install any needed packages specified in requirements.txt using uv
-RUN uv pip install -r requirements.txt
-
-# Define environment variable
-ENV NAME TelegramAggregator
+RUN pip install -r requirements.txt
 
 # Run main.py when the container launches
 CMD ["python", "main.py"]

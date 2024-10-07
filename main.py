@@ -1,14 +1,15 @@
 import asyncio
 import argparse
-from dotenv import load_dotenv
+import os
 from telegram_client import TelegramClient
 from openai_summarizer import create_summary
 
-# Load environment variables
-load_dotenv()
-
 
 async def main(save_session=False, session_string=None, session_file=None):
+    # If no session string or file is provided, check the environment variable
+    if not session_string and not session_file:
+        session_string = os.getenv("TELEGRAM_SESSION_STRING")
+
     telegram_client = TelegramClient()
     await telegram_client.initialize(save_session, session_string, session_file)
 

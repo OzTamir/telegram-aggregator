@@ -4,6 +4,10 @@ from telethon.sessions import StringSession
 from datetime import datetime, timedelta
 import os
 import pytz
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 
 class TelegramClient:

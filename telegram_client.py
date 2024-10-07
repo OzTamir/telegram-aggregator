@@ -22,7 +22,9 @@ class TelegramClient:
         self.MINUTES_AGO = int(
             os.getenv("MINUTES_AGO", "60")
         )  # Default to 60 minutes if not set
+        self.SUMMARY_BOT_TOKEN = os.getenv("SUMMARY_BOT_TOKEN")
         self.client = None
+        self.bot_client = None
 
         # Set up logging
         logging.basicConfig(
@@ -56,6 +58,12 @@ class TelegramClient:
             self.logger.info("User not authorized. Sending code request.")
             await self.client.send_code_request(self.PHONE_NUMBER)
             await self.client.sign_in(self.PHONE_NUMBER, input("Enter the code: "))
+
+        if self.SUMMARY_BOT_TOKEN:
+            self.logger.info("Initializing bot client")
+            self.bot_client = TelethonClient("bot_session", self.API_ID, self.API_HASH)
+            await self.bot_client.start(bot_token=self.SUMMARY_BOT_TOKEN)
+            self.logger.info("Bot client initialized successfully")
 
         self.logger.info("TelegramClient initialized successfully")
 
@@ -103,12 +111,22 @@ class TelegramClient:
         return highlights.strip(), details.strip()
 
     async def send_summary(self, highlights, details):
+        """
+        Bots can't send comments, so we send the highlights first (with the bot or the user), then the details (always from the user).
+        """
         self.logger.info(f"Sending summary to target channel: {self.TARGET_CHANNEL}")
-        target_entity = await self.client.get_entity(self.TARGET_CHANNEL)
         try:
-            highlights_message = await self.client.send_message(
-                target_entity, highlights
-            )
+            if self.bot_client:
+                target_entity = await self.bot_client.get_entity(self.TARGET_CHANNEL)
+                highlights_message = await self.bot_client.send_message(
+                    target_entity, highlights
+                )
+
+            target_entity = await self.client.get_entity(self.TARGET_CHANNEL)
+            if not self.bot_client:
+                highlights_message = await self.client.send_message(
+                    target_entity, highlights
+                )
             await self.client.send_message(
                 target_entity, details, comment_to=highlights_message
             )
@@ -123,4 +141,6 @@ class TelegramClient:
     async def disconnect(self):
         self.logger.info("Disconnecting TelegramClient")
         await self.client.disconnect()
+        if self.bot_client:
+            await self.bot_client.disconnect()
         self.logger.info("TelegramClient disconnected successfully")

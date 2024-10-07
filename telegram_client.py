@@ -17,6 +17,9 @@ class TelegramClient:
         self.PHONE_NUMBER = os.getenv("TELEGRAM_PHONE_NUMBER")
         self.CHANNELS = os.getenv("TELEGRAM_CHANNELS").split(",")
         self.TARGET_CHANNEL = os.getenv("TARGET_CHANNEL")
+        self.MINUTES_AGO = int(
+            os.getenv("MINUTES_AGO", "60")
+        )  # Default to 60 minutes if not set
         self.client = None
 
     async def initialize(
@@ -47,16 +50,16 @@ class TelegramClient:
         print("Session saved to session.txt")
 
     async def fetch_recent_messages(self):
-        one_hour_ago = datetime.now(pytz.UTC) - timedelta(hours=1)
+        minutes_ago = datetime.now(pytz.UTC) - timedelta(minutes=self.MINUTES_AGO)
         all_messages = []
 
         for channel in self.CHANNELS:
             entity = await self.client.get_entity(channel)
-            messages = await self.client.get_messages(entity, limit=50)
+            messages = await self.client.get_messages(entity, limit=10)
 
             if messages:
                 for message in reversed(messages):
-                    if message.date >= one_hour_ago:
+                    if message.date >= minutes_ago:
                         all_messages.append(
                             self.format_message(message, entity, channel)
                         )

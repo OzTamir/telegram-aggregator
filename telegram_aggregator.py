@@ -21,7 +21,8 @@ CHANNELS = os.getenv("TELEGRAM_CHANNELS").split(",")
 # OpenAI API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# ... rest of the code ...
+# Add this line to get the target channel
+TARGET_CHANNEL = os.getenv("TARGET_CHANNEL")
 
 
 async def main():
@@ -42,7 +43,10 @@ async def main():
             if messages:
                 for message in reversed(messages):
                     if message.date >= one_hour_ago:
-                        message_time = message.date.strftime("%H:%M")
+                        israel_tz = pytz.timezone("Asia/Jerusalem")
+                        message_time = message.date.astimezone(israel_tz).strftime(
+                            "%H:%M"
+                        )
                         message_text = message.text if message.text else "[Media]"
                         message_link = f"https://t.me/{channel}/{message.id}"
                         all_messages.append(
@@ -57,6 +61,10 @@ async def main():
         if all_messages:
             summary = create_summary(all_messages)
             print(summary)
+
+            # Send the summary to the target channel
+            target_entity = await client.get_entity(TARGET_CHANNEL)
+            await client.send_message(target_entity, summary)
         else:
             print("No messages found in the last hour.")
 
@@ -79,12 +87,19 @@ def create_summary(messages):
 
     Example:
     ```
-    * Terrorist attack in Jerusalem - three people were killed and several others injured.
-        - [ChannelName] [HH:MM]: Terrorist attack in Jerusalem - three people were killed and several others injured. [Link to message]
-        - [ChannelName] [HH:MM]: Another terrorist attack in Jerusalem - two people were killed and several others injured. [Link to message]
-        - [ChannelName] [HH:MM]: Terrorist attack in Jerusalem - three people were killed and several others injured. [Link to message]
+    *️⃣ פיגוע טרור בירושלים - שלושה אנשים נהרגו ומספר נפצעו
+
+    🔹 [ChannelName] [HH:MM]: פיגוע טרור בירושלים - שלושה אנשים נהרגו ומספר נפצעו
+    🔗 https://t.me/channel1/123456
+
+    🔹 [ChannelName] [HH:MM]: פיגוע טרור נוסף בירושלים - שני אנשים נהרגו ומספר נפצעו
+    🔗 https://t.me/channel2/123456
+
+    🔹 [ChannelName] [HH:MM]: פיגוע טרור בירושלים - שלושה אנשים נהרגו ומספר נפצעו
+    🔗 https://t.me/channel3/123456
     ```
 
+    Add a seperator between each bullet point.
     Everything you write should be in the same language as the messages (Hebrew).
     """
 

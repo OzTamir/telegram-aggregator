@@ -28,6 +28,7 @@ Thumbs.db
 
 # Telegram session files
 *.session
+session.txt
 
 # Other
 *.bak
